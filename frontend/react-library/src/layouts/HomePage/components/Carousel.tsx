@@ -1,6 +1,77 @@
 import { ReturnBook } from "./ReturnBook";
+import { useEffect, useState } from "react";
+import BookModel from "../../../models/BookModel";
 
 export const Carousel = () => {
+
+    const [books, setBooks] = useState<BookModel[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [httpError, setHttpError] = useState(null);
+
+    useEffect(() => {
+        const fetchBooks = async () => {
+            // Base URL for the API endpoint
+            const baseUrl: string = "http://localhost:8080/api/books";
+
+            // Construct the complete URL with query parameters for pagination
+            const url: string = `${baseUrl}?page=0&size=9`;
+
+            // Send an asynchronous network request to fetch the data from the API
+            const response = await fetch(url);
+
+            // Check if the network request was successful
+            if (!response.ok) {
+                // If the response status is not ok (e.g., 404 or 500), throw an error
+                throw new Error('Something went wrong');
+            }
+
+            // Parse the response body as JSON
+            const responseJson = await response.json();
+
+            // Extract the 'books' data from the response JSON
+            const responseData = responseJson._embedded.books;
+
+            const loadedBooks: BookModel[] = [];
+
+            for(const key in responseData){
+                loadedBooks.push({
+                    id: responseData[key].id,
+                    title: responseData[key].title,
+                    author: responseData[key].author,
+                    description: responseData[key].description,
+                    copies: responseData[key].copies,
+                    copiesAvailable: responseData[key].copiesAvailable,
+                    category: responseData[key].category,
+                    img: responseData[key].img,
+                }
+                )
+            }
+
+            setBooks(loadedBooks);
+            setIsLoading(false);
+        };
+        fetchBooks().catch((error: any) => {
+            setIsLoading(false);
+            setHttpError(error.message);
+        })
+    }, [])
+
+    if(isLoading) {
+        return (
+            <div className="container m-5">
+                <p>Loading...</p>
+            </div>
+        )
+    }
+
+    if(httpError) {
+        return (
+            <div className="container m-5">
+                <p>{httpError}</p>
+            </div>
+        )
+    }
+
     return (
         <div className='container mt-5' style={{ height: 550 }}>
             <div className='homepage-carousel-title'>
