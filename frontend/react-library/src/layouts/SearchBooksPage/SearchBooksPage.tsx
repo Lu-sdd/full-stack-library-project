@@ -28,7 +28,8 @@ export const SearchBooksPage = () => {
             if (searchUrl === '') {
                 url = `${baseUrl}?page=${currentPage - 1}&size=${booksPerPage}`;
             } else {
-                url = baseUrl + searchUrl;
+                let searchWithPage = searchUrl.replace('<page>',`${currentPage-1}`);
+                url = baseUrl + searchWithPage;
             }
 
             // Fetch data from the API using the constructed URL
@@ -97,17 +98,20 @@ export const SearchBooksPage = () => {
 
     //handle changes in the search box content
     const searchHandleChange = () => {
+        setCurrentPage(1);
         //If the search box content is empty, set setSearchUrl to an empty string to clear the search link
         if (search === '') {
             setSearchUrl('');
         } else {
             // If the search box has content, construct the search link based on the search box content    
-            setSearchUrl(`/search/findByTitleContaining?title=${search}&page=0&size=${booksPerPage}`)
+            setSearchUrl(`/search/findByTitleContaining?title=${search}&page=<page>&size=${booksPerPage}`)
         }
+        setCategorySelection('Book category')
     }
 
     //Function named categoryField: handle changes in the category selection
     const categoryField = (value: string) => {
+        setCurrentPage(1);
         if (
             value.toLowerCase() === 'fe' ||
             value.toLowerCase() === 'be' ||
@@ -115,10 +119,10 @@ export const SearchBooksPage = () => {
             value.toLowerCase() === 'devops'
         ) {
             setCategorySelection(value);
-            setSearchUrl(`/search/findByCategory?category=${value}&page=0&size=${booksPerPage}`)
+            setSearchUrl(`/search/findByCategory?category=${value}&page=<page>&size=${booksPerPage}`)
         } else {
             setCategorySelection('All');
-            setSearchUrl(`?page=0&size=${booksPerPage}`)
+            setSearchUrl(`?page=<page>&size=${booksPerPage}`)
         }
     }
 
