@@ -1,3 +1,5 @@
+import { NavLink } from "react-router-dom"
+
 export const Navbar = () => {
     return (
         <nav className='navbar navbar-expand-lg navbar-dark main-color py-3'>
@@ -14,11 +16,12 @@ export const Navbar = () => {
                     <ul className='navbar-nav'>
 
                         <li className='nav-item'>
-                            <a className='nav-link' href='#'>Home</a>
+                            {/*Comparing with <a>, <NavLink> or <Link> is more approriate when working within a React application, it enables easy navigation between different routes, prevents full page reloads, enhancing the user experience in single-page applications. */}
+                            <NavLink className='nav-link' to='/home'>Home</NavLink>
                         </li>
 
                         <li className='nav-item'>
-                            <a className='nav-link' href='#'>Search Books</a>
+                            <NavLink className='nav-link' to='/search'>Search Books</NavLink>
                         </li>
                     </ul>
 
