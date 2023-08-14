@@ -2,12 +2,20 @@ import { useEffect, useState } from "react";
 import BookModel from "../../models/BookModel";
 import { SpinnerLoading } from "../Utils/SpinnerLoading";
 import { StarsReview } from "../Utils/StarsReview";
+import { CheckoutAndReviewBox } from "./CheckoutAndReviewBox";
+import ReviewModel from "../../models/ReviewModel";
+import { LatestReviews } from "./LatestReviews";
 
 export const BookCheckoutPage = () => {
 
     const [book, setBook] = useState<BookModel>();
     const [isLoading, setIsLoading] = useState(true);
     const [httpError, setHttpError] = useState(null);
+
+    //Review State
+    const [reviews, setReviews] = useState<ReviewModel[]>([]);
+    const [totalStars, setTotalStars] = useState(0);
+    const [isLoadingReview, setIsLoadingReview] = useState(true);
 
     //extract the book ID from the URL
     const bookId = (window.location.pathname).split('/')[2];
@@ -46,8 +54,63 @@ export const BookCheckoutPage = () => {
         })
     }, []);
 
+    //Fetch book reviews
+    useEffect(() => {
+        const fetchBookReviews = async () => {
+            // Construct the URL for fetching reviews based on the provided bookId.
+            const reviewUrl: string = `http://localhost:8080/api/reviews/search/findByBookId?bookId=${bookId}`;
 
-    if (isLoading) {
+            // Fetch reviews from the API.
+            const responseReviews = await fetch(reviewUrl);
+
+            //if the response is not OK, throw an error
+            if (!responseReviews.ok) {
+                throw new Error('Something wrong!')
+            }
+
+            const responseJsonReviews = await responseReviews.json();
+
+
+            // Extract the reviews data from the response.
+            const responseData = responseJsonReviews._embedded.reviews;
+
+            const loadedReviews: ReviewModel[] = [];
+
+            let weightedStarReviews: number = 0; //weighted表示加权
+
+            for (const key in responseData) {
+                loadedReviews.push({
+                    id: responseData[key].id,
+                    userEmail: responseData[key].userEmail,
+                    date: responseData[key].date,
+                    rating: responseData[key].rating,
+                    book_id: responseData[key].bookId,
+                    reviewDescription: responseData[key].reviewDescription,
+                })
+                weightedStarReviews = weightedStarReviews + responseData[key].rating;
+            }
+
+            /* line 1: 判断loadedReviews是否为空，比如null， undefined，false
+               line 2: 先乘2再除以2，放大小数部分再缩小回原比例，使得四舍五入结果更加精确。toFixed()方法将结果格式化为带有一位小数的字符串
+               line 3: Number这里将round进行了类型转换，因为toFixed（） 返回的是一个string类型
+             */
+            if (loadedReviews) {  
+                const round = (Math.round((weightedStarReviews / loadedReviews.length) * 2) / 2).toFixed(1); 
+                setTotalStars(Number(round)); 
+            }
+
+            setReviews(loadedReviews);
+            setIsLoadingReview(false);
+        };
+
+        fetchBookReviews().catch((error: any) => {
+            setIsLoadingReview(false);
+            setHttpError(error.message);
+        })
+    }, []);
+
+
+    if (isLoading || isLoadingReview) {
         return (
             <SpinnerLoading />
         )
@@ -79,11 +142,13 @@ export const BookCheckoutPage = () => {
                             <h2>{book?.title}</h2>
                             <h5 className='text-primary'>{book?.author}</h5>
                             <p className='lead'>{book?.description}</p>
-                            <StarsReview rating={4.5} size={32} />
+                            <StarsReview rating={totalStars} size={32} />
                         </div>
                     </div>
+                    <CheckoutAndReviewBox book={book} mobile={false} />
                 </div>
                 <hr />
+                <LatestReviews reviews={reviews} bookId={book?.id} mobile={false}/>
             </div>
             <div className='container d-lg-none mt-5'>
                 <div className='d-flex justify-content-center align-items-center'>
@@ -99,10 +164,12 @@ export const BookCheckoutPage = () => {
                         <h2>{book?.title}</h2>
                         <h5 className='text-primary'>{book?.author}</h5>
                         <p className='lead'>{book?.description}</p>
-                        <StarsReview rating={4.5} size={32} />
+                        <StarsReview rating={totalStars} size={32} />
                     </div>
                 </div>
+                <CheckoutAndReviewBox book={book} mobile={true} />
                 <hr />
+                <LatestReviews reviews={reviews} bookId={book?.id} mobile={true} />
             </div>
         </div>
     );
