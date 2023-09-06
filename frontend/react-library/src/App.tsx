@@ -11,17 +11,21 @@ import { OktaAuth, toRelativeUrl } from '@okta/okta-auth-js'
 import { LoginCallback, Security } from '@okta/okta-react';
 import LoginWidget from './Auth/LoginWidget';
 
+// Create an OktaAuth instance using the provided Okta configuration.
 const oktaAuth = new OktaAuth(oktaConfig);
 
 export const App = () => {
 
+  // Custom authentication handler that redirects users to the login page.
   const customAuthHandler = () => {
     history.push('/login');
   }
 
   const history = useHistory();
 
+  // Function to restore the original URI after successful authentication.
   const restoreOriginalUri = async (_oktaAuth: any, originalUri: any) => {
+    // Replace the current history location with the original URI or the root path.
     history.replace(toRelativeUrl(originalUri || '/', window.location.origin))
   };
 
