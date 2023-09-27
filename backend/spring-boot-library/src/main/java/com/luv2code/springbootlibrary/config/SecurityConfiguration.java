@@ -19,9 +19,11 @@ public class SecurityConfiguration {
     protected SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         //protect endpoints at /api/<type>/secure
+        //Determines which requests require authentication and which requests are allowed public access.
         http.authorizeHttpRequests(requests ->
                         requests
-                                .requestMatchers("/api/books/secure/**")
+                                .requestMatchers("/api/books/secure/**",
+                                        "/api/reviews/secure/**")
                                 .authenticated()
                                 .anyRequest().permitAll())
                 .oauth2ResourceServer(oauth2ResourceServer -> oauth2ResourceServer.jwt(Customizer.withDefaults()));
