@@ -10,6 +10,7 @@ import { oktaConfig } from './lib/oktaConfig';
 import { OktaAuth, toRelativeUrl } from '@okta/okta-auth-js'
 import { LoginCallback, Security } from '@okta/okta-react';
 import LoginWidget from './Auth/LoginWidget';
+import { ReviewListPage } from './layouts/BookCheckoutPage/ReviewListPage/ReviewListPage';
 
 // Create an OktaAuth instance using the provided Okta configuration.
 const oktaAuth = new OktaAuth(oktaConfig);
@@ -49,6 +50,10 @@ export const App = () => {
 
           <Route path='/search'>
             <SearchBooksPage />
+          </Route>
+
+          <Route path='/reviewlist/:bookId'>
+            <ReviewListPage/>
           </Route>
 
           {/*:bookId表示一个动态的路由参数*/}
