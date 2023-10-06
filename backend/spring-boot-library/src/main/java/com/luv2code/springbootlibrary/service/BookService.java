@@ -4,11 +4,18 @@ import com.luv2code.springbootlibrary.dao.BookRepository;
 import com.luv2code.springbootlibrary.dao.CheckoutRepository;
 import com.luv2code.springbootlibrary.entity.Book;
 import com.luv2code.springbootlibrary.entity.Checkout;
+import com.luv2code.springbootlibrary.responsemodels.ShelfCurrentLoansResponse;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @Transactional
@@ -57,5 +64,51 @@ public class BookService {
 
     public int currentLoansCount(String userEmail) {
         return checkoutRepository.findBooksByUserEmail(userEmail).size();
+    }
+
+    public List<ShelfCurrentLoansResponse> currentLoans(String userEmail) throws Exception {
+        //Initialize a list to store responses
+        List<ShelfCurrentLoansResponse> shelfCurrentLoansResponses = new ArrayList<>();
+
+        // Retrieve a list of Checkouts associated with the given user's email
+        List<Checkout> checkoutList = checkoutRepository.findBooksByUserEmail(userEmail);
+
+        //Create a list to store book IDs from checkouts
+        List<Long> bookIdList = new ArrayList<>();
+
+        //Extract book IDs from checkouts and add them to bookIdList
+        for (Checkout i: checkoutList){
+            bookIdList.add(i.getBookId());
+        }
+
+        //Retrieve book information based on the collected book ids
+        List<Book> books = bookRepository.findBooksByBookIds(bookIdList);
+
+        //Create a date formatter for parsing dates. It can parse the date string which satisfies pattern here and return a Date object.
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+
+        // Find the corresponding checkout record for the book.
+        for(Book book : books){
+            Optional<Checkout> checkout = checkoutList.stream()
+                    .filter(x -> x.getBookId() == book.getId()).findFirst();
+
+            // If a checkout record exists:
+            if (checkout.isPresent()){
+
+                // Parse the return date and the current date.
+                Date d1 = sdf.parse(checkout.get().getReturnDate());
+                Date d2 = sdf.parse(LocalDate.now().toString());
+
+                // Define the TimeUnit as DAYS；TimeUnit is an enum in Java that represents various units of time, such as days, hours, minutes, and seconds.
+                TimeUnit time = TimeUnit.DAYS;
+
+                //Calculate the time difference in days between d1 and d2
+                long difference_In_Time = time.convert(d1.getTime() - d2.getTime(),
+                        TimeUnit.MILLISECONDS);
+
+                shelfCurrentLoansResponses.add(new ShelfCurrentLoansResponse(book,(int)difference_In_Time));
+            }
+        }
+        return shelfCurrentLoansResponses;
     }
 }
