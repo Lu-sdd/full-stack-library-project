@@ -111,4 +111,19 @@ public class BookService {
         }
         return shelfCurrentLoansResponses;
     }
+
+    //Return book 还书
+    public void returnBook (String userEmail, Long bookId) throws Exception{
+        Optional<Book> book = bookRepository.findById(bookId);
+        Checkout validateCheckout = checkoutRepository.findByUserEmailAndBookId(userEmail,bookId);
+
+        if(book.isEmpty() || validateCheckout == null ){
+            throw new Exception("Book does not exist or not checked out by user");
+        }
+
+        book.get().setCopiesAvailable(book.get().getCopiesAvailable()+1);
+
+        bookRepository.save(book.get());
+        checkoutRepository.deleteById(validateCheckout.getId());
+    }
 }
