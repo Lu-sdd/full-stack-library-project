@@ -1,6 +1,7 @@
 import { Link, NavLink } from "react-router-dom"
 import { useOktaAuth } from "@okta/okta-react"
 import { SpinnerLoading } from "../Utils/SpinnerLoading";
+import { link } from "fs";
 
 export const Navbar = () => {
 
@@ -36,6 +37,12 @@ export const Navbar = () => {
                         <li className='nav-item'>
                             <NavLink className='nav-link' to='/search'>Search Books</NavLink>
                         </li>
+
+                        {authState.isAuthenticated && 
+                            <li className="nav-item">
+                                <NavLink className="nav-link" to='/shelf'>Shelf</NavLink> 
+                            </li>
+                        }
                     </ul>
 
                     <ul className='navbar-nav ms-auto'>
