@@ -38,9 +38,15 @@ export const Navbar = () => {
                             <NavLink className='nav-link' to='/search'>Search Books</NavLink>
                         </li>
 
-                        {authState.isAuthenticated && 
+                        {authState.isAuthenticated &&
                             <li className="nav-item">
-                                <NavLink className="nav-link" to='/shelf'>Shelf</NavLink> 
+                                <NavLink className="nav-link" to='/shelf'>Shelf</NavLink>
+                            </li>
+                        }
+
+                        {authState.isAuthenticated &&
+                            <li className="nav-item">
+                                <NavLink className="nav-link" to='/fees'>Pay fees</NavLink>
                             </li>
                         }
                     </ul>

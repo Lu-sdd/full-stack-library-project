@@ -26,12 +26,15 @@ export const BookCheckoutPage = () => {
     const [isLoadingUserReview, setIsLoadingUserReview] = useState(true);
 
     //Loans Count State
-    const [currentLoansCount, setCurrentLoansCount ] = useState(0);
-    const [ isLoadingCurrentLoansCount, setIsLoadingCurrentLoansCount ] = useState(true);
+    const [currentLoansCount, setCurrentLoansCount] = useState(0);
+    const [isLoadingCurrentLoansCount, setIsLoadingCurrentLoansCount] = useState(true);
 
     //Is Book Check Out?
     const [isCheckedOut, setIsCheckedOut] = useState(false);
     const [isLoadingBookCheckedOut, setIsLoadingBookCheckedOut] = useState(true);
+
+    //payment
+    const [displayError, setDisplayError] = useState(false);
 
     //extract the book ID from the URL
     const bookId = (window.location.pathname).split('/')[2];
@@ -110,9 +113,9 @@ export const BookCheckoutPage = () => {
                line 2: 先乘2再除以2，放大小数部分再缩小回原比例，使得四舍五入结果更加精确。toFixed()方法将结果格式化为带有一位小数的字符串
                line 3: Number这里将round进行了类型转换，因为toFixed（） 返回的是一个string类型
              */
-            if (loadedReviews) {  
-                const round = (Math.round((weightedStarReviews / loadedReviews.length) * 2) / 2).toFixed(1); 
-                setTotalStars(Number(round)); 
+            if (loadedReviews) {
+                const round = (Math.round((weightedStarReviews / loadedReviews.length) * 2) / 2).toFixed(1);
+                setTotalStars(Number(round));
             }
 
             setReviews(loadedReviews);
@@ -128,17 +131,17 @@ export const BookCheckoutPage = () => {
     //查询用户是否为这本书留下了review
     useEffect(() => {
         const fetchUserReviewBook = async () => {
-            if(authState && authState.isAuthenticated){
+            if (authState && authState.isAuthenticated) {
                 const url = `http://localhost:8080/api/reviews/secure/user/book?bookId=${bookId}`;
                 const requestOptions = {
                     method: 'GET',
                     headers: {
                         Authorization: `Bearer ${authState.accessToken?.accessToken}`,
-                        'Content-Type':'application/json'
+                        'Content-Type': 'application/json'
                     }
                 };
                 const userReview = await fetch(url, requestOptions);
-                if(!userReview.ok) {
+                if (!userReview.ok) {
                     throw new Error('Something went wrong');
                 }
                 const userReviewResponseJson = await userReview.json();
@@ -155,18 +158,18 @@ export const BookCheckoutPage = () => {
     //Fetch user current loans count
     useEffect(() => {
         const fetchUserCurrentLoansCount = async () => {
-            if (authState && authState.isAuthenticated){
+            if (authState && authState.isAuthenticated) {
                 const url = `http://localhost:8080/api/books/secure/currentloans/count`;
                 const requestOptions = {
                     method: 'GET',
-                    headers:{
+                    headers: {
                         Authorization: `Bearer ${authState.accessToken?.accessToken}`,
-                        'content-type':'application/json'
+                        'content-type': 'application/json'
                     },
                 };
                 const currentLoansCountResponse = await fetch(url, requestOptions);
 
-                if (!currentLoansCountResponse.ok){
+                if (!currentLoansCountResponse.ok) {
                     throw new Error('Something went wrong!')
                 }
                 const currentLoansCountResponseJson = await currentLoansCountResponse.json();
@@ -184,18 +187,18 @@ export const BookCheckoutPage = () => {
     //查询该书是否已经被借出去了
     useEffect(() => {
         const fetchUserCheckedOutBook = async () => {
-            if(authState && authState.isAuthenticated){
+            if (authState && authState.isAuthenticated) {
                 const url = `http://localhost:8080/api/books/secure/ischeckedout/byuser?bookId=${bookId}`;
                 const requestOptions = {
-                    method:'GET',
-                    headers:{
-                        Authorization:`Bearer ${authState.accessToken?.accessToken}`,
-                        'content-Type':'application/json'
+                    method: 'GET',
+                    headers: {
+                        Authorization: `Bearer ${authState.accessToken?.accessToken}`,
+                        'content-Type': 'application/json'
                     }
                 };
                 const bookCheckedOut = await fetch(url, requestOptions);
 
-                if(!bookCheckedOut.ok){
+                if (!bookCheckedOut.ok) {
                     throw new Error('Something went wrong!')
                 }
 
@@ -209,8 +212,8 @@ export const BookCheckoutPage = () => {
             setHttpError(error.message);
         })
     }, [authState]);
-    
- 
+
+
 
     if (isLoading || isLoadingReview || isLoadingCurrentLoansCount || isLoadingBookCheckedOut || isLoadingUserReview) {
         return (
@@ -237,19 +240,22 @@ export const BookCheckoutPage = () => {
             }
         };
         const checkoutResponse = await fetch(url, requestOptions);
-        if(!checkoutResponse.ok){
-            throw new Error('Something went wrong!');
+        if (!checkoutResponse.ok) {
+            setDisplayError(true);
+            return;
+            // throw new Error('Something went wrong!');
         }
+        setDisplayError(false);
         setIsCheckedOut(true);
     }
 
     //提交review
-    async function submitReview(starInput:number, reviewDescription:string) {
+    async function submitReview(starInput: number, reviewDescription: string) {
         let bookId: number = 0;
         if (book?.id) {
             bookId = book.id;
         }
-        
+
         const reviewRequestModel = new ReviewRequestModel(starInput, bookId, reviewDescription);
         const url = `http://localhost:8080/api/reviews/secure`;
         const requestOptions = {
@@ -270,6 +276,11 @@ export const BookCheckoutPage = () => {
     return (
         <div>
             <div className='container d-none d-lg-block'>
+                {displayError && <div className='alert alert-danger mt-3' role='alert'>
+                    Please pay outstanding fees and/or return late book(s).
+                </div>
+
+                }
                 <div className='row mt-5'>
                     <div className='col-sm-2 col-md-2'>
                         {/*book?.img - optional chaining operator(?.)ensures that if book is null or undefined, the expression doesn't throw an error and just return undefined. */}
@@ -288,16 +299,20 @@ export const BookCheckoutPage = () => {
                             <StarsReview rating={totalStars} size={32} />
                         </div>
                     </div>
-                    <CheckoutAndReviewBox book={book} mobile={false} currentLoansCount={currentLoansCount} 
-                                          isAuthenticated={authState?.isAuthenticated} isCheckedOut={isCheckedOut} 
-                                          checkoutBook={checkoutBook}
-                                          isReviewLeft={isReviewLeft}
-                                          submitReview={submitReview}/>
+                    <CheckoutAndReviewBox book={book} mobile={false} currentLoansCount={currentLoansCount}
+                        isAuthenticated={authState?.isAuthenticated} isCheckedOut={isCheckedOut}
+                        checkoutBook={checkoutBook}
+                        isReviewLeft={isReviewLeft}
+                        submitReview={submitReview} />
                 </div>
                 <hr />
-                <LatestReviews reviews={reviews} bookId={book?.id} mobile={false}/>
+                <LatestReviews reviews={reviews} bookId={book?.id} mobile={false} />
             </div>
             <div className='container d-lg-none mt-5'>
+                {displayError && <div className='alert alert-danger mt-3' role='alert'>
+                    Please pay outstanding fees and/or return late book(s).
+                </div>
+                }
                 <div className='d-flex justify-content-center align-items-center'>
                     {book?.img ?
                         <img src={book?.img} width='226' height='349' alt='Book' />
@@ -314,11 +329,11 @@ export const BookCheckoutPage = () => {
                         <StarsReview rating={totalStars} size={32} />
                     </div>
                 </div>
-                <CheckoutAndReviewBox book={book} mobile={true} currentLoansCount={currentLoansCount} 
-                                      isAuthenticated={authState?.isAuthenticated} isCheckedOut={isCheckedOut} 
-                                      checkoutBook={checkoutBook}
-                                      isReviewLeft={isReviewLeft}
-                                      submitReview={submitReview}/>
+                <CheckoutAndReviewBox book={book} mobile={true} currentLoansCount={currentLoansCount}
+                    isAuthenticated={authState?.isAuthenticated} isCheckedOut={isCheckedOut}
+                    checkoutBook={checkoutBook}
+                    isReviewLeft={isReviewLeft}
+                    submitReview={submitReview} />
                 <hr />
                 <LatestReviews reviews={reviews} bookId={book?.id} mobile={true} />
             </div>
